@@ -1,0 +1,13 @@
+Lingagem Mangaba v3
+Grupo:
+Diego Andradade
+
+#1 - Instruções
+
+1. O primeiro passo é executar a ferramenta SableCC no arquivo mangaba.sable
+
+2. Vá até o pacote mangaba e dê um F5 no pacote.
+
+3. O segundo passo é executar classe Main onde irá executar os testes.
+Basta trocar o número dos testes no próprio método main. temos o teste1.man teste2.man
+e teste3.man

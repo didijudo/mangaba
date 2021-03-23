@@ -1,0 +1,483 @@
+Package mangaba;
+
+
+Helpers
+
+ letra = ['a' .. 'z']|['A' .. 'Z']|'ã'|'á'|'à'|'â'|'é'|'è'|'ê'|'í'|'ì'|'õ'|'ó'|'ò'|'ô'|'ú'|'ù'|'Á'|'À'|'Â'|'Ã'|'É'|'È'|'Ê'|'Í'|'Ï'|'Ó'|'Ô'|'Õ'|'Ö'|'Ú'|'Ç'|'ç';
+ digito = ['0' .. '9'];
+ oct_digito = ['0' .. '7'];
+ hex_digito = [['0' .. '9'] + ['A' .. 'F']];
+ nova_linha = (13 | 10);
+ tab = 9;
+ 
+ virgula = ',';
+ scape = '\';
+ 
+ booleano = ('verdadeiro' | 'falso');
+ digitos = (digito)+;
+ 
+ inteiro = digitos;
+ real = inteiro | inteiro virgula digitos;
+ apos = ''';
+ 
+ 
+unicode             = [0x0 .. 0xfffff];
+
+estrela             = '*';
+barra               = '/';
+aspas               = ''';
+sublinhado          = '_';
+virgula_real        = ',';
+
+nao_estrela         = [unicode - estrela];
+nao_barra           = [unicode - barra];
+nao_estrela_ou_barra= [unicode - [estrela + barra]];
+ 
+
+ comentario_inicio   = '{';
+ comentario_corpo    = nao_estrela_ou_barra* | (estrela nao_barra)* | (nao_estrela barra)*;
+ comentario_final    = '}';
+ qualquer_coisa  = [0 .. 0xffff];
+ sustenido = '#';
+ c_linha_inicio = sustenido;
+ c_linha_corpo = qualquer_coisa*;
+ c_linha_fim = nova_linha;
+ especiais = '_' | '$' |'\n' | '\t' | '\r';
+     
+ blank = (' ' | nova_linha | tab)+;
+ 
+ 
+ 
+Tokens
+
+ comentario = comentario_inicio comentario_corpo comentario_final;
+ comentario_linha = sustenido (letra | especiais | ' '| tab)* nova_linha;
+
+
+ /* Palavras reservadas */
+ apos = ''';
+ inteiro = digitos;
+ real = inteiro | inteiro virgula digitos;
+ caractere = apos letra apos;
+ booleano = booleano;
+ 
+// program = 'programa';
+ inicio = 'início';
+ fim = 'fim'; 
+ n_real = 'real';
+ n_inteiro = 'inteiro';
+ n_caract = 'caractere';
+ n_booleano = 'booleano';
+ verdadeiro = 'verdadeiro';
+ falso = 'falso';
+ vetor = 'vetor';
+ vazio = 'vazio';
+ exibir = 'exibir';
+ retorne = 'retorne';
+ em = 'em';
+
+ 
+ /* Estruturas de controle */
+ 
+ enquanto = 'enquanto';
+ se = 'se';
+ senao = 'senão';
+ para = 'para';
+ paracada = 'para cada';
+
+
+ octal = '0'oct_digito+;
+ hexa_decimal = '0'('x' | 'X')hex_digito+;
+ decimal = digito+;
+ 
+  /* Operadores booleanos */
+ 
+  e = 'e';
+ ou = 'ou';
+ nega = 'não';
+ 
+ identificador = (letra(letra | digito)*);
+    
+ blank = (' ' | nova_linha | tab)+;
+ 
+  
+ //comentario_bloco = '{'(qualquer_coisa | nova_linha)*'}';
+
+ /* Operadores aritm�ticos */
+ 
+ mais = '+';
+ menos = '-';
+ multiplica = '*';
+ divisor = '/';
+ mod = '%';
+ 
+ /* Operadores relacionais */
+ 
+ menorq = '<';
+ maiorq = '>';
+ igual = '=';
+ menor_igual = '<=';
+ maior_igual = '>=';
+ 
+ 
+ esquerdo_parenteses = '(';
+ direito_parenteses = ')';
+ atribui = ':=';
+ ponto_virgula = ';'; 
+ colchete_esquerdo = '[';
+ colchete_direito = ']';
+ chave_esquerdo = '{';
+ chave_direito = '}'; 
+ dois_pontos = ':';
+ aspas = '"';
+ separator = '|';
+ virgula = virgula;
+
+
+
+Ignored Tokens
+ comentario,
+ comentario_linha,
+ blank;
+ 
+ Productions
+ 
+ start = 
+  {start} instancia_programa {-> New start(instancia_programa)};
+  
+ instancia_programa {-> instancia_programa} =
+  bloco_declaracao? bloco_funcoes  
+   {-> New instancia_programa([bloco_declaracao.declaracao], bloco_funcoes)};  
+    
+  
+  
+ declaracao {-> declaracao} = 
+  {variavel} tipo bloco_variaveis ponto_virgula {-> New declaracao.variavel(tipo, bloco_variaveis)}
+  | {vetor} vetor tipo variavel colchete_esquerdo expr_logica colchete_direito ponto_virgula {-> New declaracao.vetor(tipo, expr_logica)};
+    
+ bloco_funcoes {-> bloco_funcoes} =
+  {funcao} funcao {-> New bloco_funcoes.funcao(funcao)}
+  |{varias} bloco_funcoes funcao {-> New bloco_funcoes.varias(bloco_funcoes, funcao)};
+  
+ funcao {-> funcao} =
+  {declaracao} tipo_funcao identificador esquerdo_parenteses variaveis_funcao? direito_parenteses  
+    inicio bloco_programa fim {-> New funcao.declaracao(tipo_funcao, identificador, variaveis_funcao, bloco_programa)};
+    
+  variaveis_funcao {-> variaveis_funcao} = 
+   {variavel} variavel_funcao {-> New variaveis_funcao.variavel(variavel_funcao)}
+   | {variaveis} variaveis_funcao separator variavel_funcao {-> New variaveis_funcao.variaveis(variaveis_funcao, variavel_funcao)};  
+    
+  variavel_funcao {-> variavel_funcao} = 
+   {variavel} tipo identificador {-> New variavel_funcao.variavel(tipo, identificador)}
+   | {variaveis} tipo identificador colchete_esquerdo expr_logica colchete_direito {-> New variavel_funcao.variaveis(tipo, identificador, expr_logica)};   
+    
+ tipo_funcao {-> tipo_funcao} = 
+  {vazio} vazio {-> New tipo_funcao.vazio(vazio)}
+  |{tipo} tipo {-> New tipo_funcao.tipo(tipo)}; 
+ 
+ bloco_programa {-> bloco_programa} =
+  bloco_declaracao? bloco_comando? {-> New bloco_programa([bloco_declaracao.declaracao], [bloco_comando.comando])};
+  
+ bloco_comando {-> comando*} =
+  {comando_simples} comando {-> [comando.comando]}
+  |{bloco_comandos} bloco_comando comando {-> [bloco_comando.comando, comando.comando]};
+  
+ bloco_declaracao  {-> declaracao*} =
+  {declaracao_simples}  declaracao {-> [declaracao.declaracao]}
+  | {bloco_declaracao}  bloco_declaracao declaracao {-> [bloco_declaracao.declaracao, declaracao.declaracao]};
+  
+  
+ 
+ // Declaracao de varias variaveis
+ 
+ bloco_variaveis {-> bloco_variaveis} = 
+  {variavel} variavel {-> New bloco_variaveis.variavel(variavel)}
+  |{variaveis} bloco_variaveis virgula variavel {-> New bloco_variaveis.variaveis(bloco_variaveis, variavel)};
+ 
+ // Chamada de metodos
+ bloco_variavel  {-> variavel*} =
+  {variavel_simples}    variavel {-> [variavel.variavel]}
+  | {bloco_variaveis}  bloco_variavel separator variavel  {-> [bloco_variavel.variavel, variavel.variavel]};
+  
+ variavel {-> variavel} =
+  {variavel}   identificador {-> New variavel.variavel(identificador)}
+  | {vetor} identificador colchete_esquerdo expr_logica colchete_direito {-> New variavel.vetor(identificador, expr_logica)}; 
+ 
+ funcao_chamada {-> funcao_chamada} =
+ 	identificador esquerdo_parenteses bloco_expr? direito_parenteses ponto_virgula
+ 	 {-> New funcao_chamada(identificador, bloco_expr)};
+ 	 
+ bloco_expr {-> bloco_expr} =
+  {simples}  expr {-> New bloco_expr.simples(expr)}
+  |{bloco_expr}  bloco_expr separator expr  {-> New bloco_expr.bloco_expr(bloco_expr, expr)};	
+ 
+  
+ comando {-> comando}=
+  {funcoes}			funcao_chamada  {-> New comando.funcao(funcao_chamada)}
+  | {retorne} 		retorno {-> New comando.retorne(retorno)}
+  | {atribuicao}    atribuicoes {-> New comando.atribuicao(atribuicoes)}
+  | {se}            se_estrutura {-> New comando.se(se_estrutura)}
+  | {se_senao}      senao_estrutura {-> New comando.se_senao(senao_estrutura)}
+  | {enquanto}      enquanto_estrutura {-> New comando.enquanto(enquanto_estrutura)}
+  | {para}          para_estrutura {-> New comando.para(para_estrutura)}
+  | {para_cada}    paracada_estrutura {-> New comando.para_cada(paracada_estrutura)}; 
+  
+  
+ retorno {-> retorno} = 
+  retorne expr ponto_virgula {-> New retorno(expr)};
+  
+  
+  
+ se_estrutura {-> se_estrutura} = se_stant fim {-> New se_estrutura(se_stant)};
+  
+ se_stant  {-> se_stant} =
+  se esquerdo_parenteses expr_logica direito_parenteses inicio bloco_comando? {-> New se_stant(expr_logica, [bloco_comando.comando])};
+  
+ senao_estrutura {-> senao_estrutura} =
+  se_stant senao_stant fim {-> New senao_estrutura(se_stant, senao_stant)};
+  
+ senao_stant {-> senao_stant} = 
+  senao bloco_comando? {-> New senao_stant([bloco_comando.comando])};
+  
+
+  enquanto_estrutura {-> enquanto_estrutura} = 
+  {enquanto} enquanto_stant fim {-> New enquanto_estrutura(enquanto_stant)};
+  
+  enquanto_stant {-> enquanto_stant} = 
+   enquanto esquerdo_parenteses expr_logica direito_parenteses inicio bloco_comando? {-> New enquanto_stant(expr_logica, [bloco_comando.comando])};
+   
+   para_estrutura {-> para_estrutura} = 
+   {para} para_stant fim {-> New para_estrutura(para_stant)};
+   
+  para_stant {-> para_stant} = 
+   para esquerdo_parenteses atribuicoes ponto_virgula para_stant2 {-> New para_stant(atribuicoes, para_stant2)};
+   
+  para_stant2 {-> para_stant2} =
+   expr ponto_virgula para_stant3 {-> New para_stant2(para_stant3)};
+   
+  para_stant3 {-> para_stant3} =
+   atribuicoes ponto_virgula direito_parenteses inicio bloco_comando? {-> New para_stant3([bloco_comando.comando])};
+   
+  paracada_estrutura {-> paracada_estrutura} = 
+   {para_cada} paracada_stant fim {-> New paracada_estrutura(paracada_stant)};
+   
+  paracada_stant {-> paracada_stant}=
+   paracada esquerdo_parenteses tipo identificador dois_pontos paracada_stant2 {-> New paracada_stant(tipo, identificador, paracada_stant2)};
+   
+  paracada_stant2 {-> paracada_stant2}= 
+   identificador direito_parenteses inicio bloco_comando? {-> New paracada_stant2([bloco_comando.comando])};
+ 
+ 
+ 
+ expr = 
+  {mais} expr mais fator {-> New expr.mais(expr, fator.expr)}
+  | {menos} expr menos fator {-> New expr.menos(expr, fator.expr)}
+  | {fator} fator {-> fator.expr};
+  
+  fator {-> expr} =
+  {vezes} fator multiplica termo {-> New expr.vezes(fator.expr, termo.expr)}
+  | {dividido} fator divisor termo {-> New expr.dividido(fator.expr, termo.expr)}
+  | {termo} termo {-> termo.expr};
+  
+ termo {-> expr} =
+  {expressao}  esquerdo_parenteses expr direito_parenteses {-> expr}
+  | {valor} valor  {-> New expr.valor(valor)}
+  | {variavel} variavel {-> New expr.variavel(variavel)}                         
+  | {menos_expressao} menos termo {-> New expr.menos_expressao(menos, termo.expr)};
+  
+  
+ expr_logica =
+  {ou} parenteses ou parenteses2  {-> New expr_logica.ou(parenteses.expr_logica, parenteses2.expr_logica)}                                              
+  | {termo_logico} termo_logico   {-> termo_logico.expr_logica};
+
+ termo_logico  {-> expr_logica} =
+  {e} parenteses e parenteses2  {-> New expr_logica.e(parenteses.expr_logica, parenteses2.expr_logica)  }
+  | {relacional} expr_relac   {-> expr_relac.expr_logica};
+
+ expr_relac {-> expr_logica} =
+   {termo_relac} termo_relac   {-> termo_relac.expr_logica};
+
+ termo_relac  {-> expr_logica} =
+  {maiorigual}  parenteses  maior_igual parenteses2  {-> New expr_logica.maiorigual(parenteses.expr_logica,  parenteses2.expr_logica)  }
+  | {menorigual} parenteses  menor_igual parenteses2 {-> New expr_logica.menorigual(parenteses.expr_logica,  parenteses2.expr_logica)  }
+  | {maior} parenteses  maiorq parenteses2 {-> New expr_logica.maior(parenteses.expr_logica,  parenteses2.expr_logica)  }
+  | {menor} parenteses  menorq parenteses2 {-> New expr_logica.menor(parenteses.expr_logica,  parenteses2.expr_logica)  }
+  | {expressao_aritm} expr_aritm    {-> expr_aritm.expr_logica}
+  | {negacao} negacao {-> negacao.expr_logica};
+  
+  
+ expr_aritm    {-> expr_logica}=
+  {mais} expr_aritm mais fator_aritm                     {-> New expr_logica.mais(expr_aritm.expr_logica, fator_aritm.expr_logica)  }
+  | {menos} expr_aritm menos fator_aritm                 {-> New expr_logica.menos(expr_aritm.expr_logica, fator_aritm.expr_logica)  }
+  | {fator} fator_aritm                                       {-> fator_aritm.expr_logica};
+ 
+ fator_aritm             {-> expr_logica} =
+  {vezes} fator_aritm multiplica termo_aritm                     {-> New expr_logica.vezes(fator_aritm.expr_logica, termo_aritm.expr_logica)  }
+  | {dividido} fator_aritm divisor termo_aritm                 {-> New expr_logica.dividido(fator_aritm.expr_logica, termo_aritm.expr_logica)  }
+  | {resto} fator_aritm mod termo_aritm                     {-> New expr_logica.dividido(fator_aritm.expr_logica, termo_aritm.expr_logica)  }
+  | {termo} termo_aritm                                        {-> termo_aritm.expr_logica};
+  
+ termo_aritm     {-> expr_logica} =
+  {expressao}  esquerdo_parenteses expr_aritm direito_parenteses     {-> expr_aritm.expr_logica}
+  | {valor} valor                                                {-> New expr_logica.valor(valor)}
+  | {variavel} variavel                                          {-> New expr_logica.variavel(variavel)};
+  
+  
+ negacao {-> expr_logica} = 
+  {nao} nega parenteses {-> New expr_logica.nao(parenteses.expr_logica)};
+  
+ tipo =
+  {real}                n_real
+  | {inteiro}             n_inteiro
+  | {caractere}           n_caract
+  | {booleano} n_booleano;
+ 
+
+ valor =
+  {valor_real}          real
+  | {valor_inteiro}       inteiro
+  | {valor_caractere}     caractere
+  | {valor_booleano} booleano;
+   
+ 
+ atribuicoes {-> atribuicoes} =
+  {atribuicao} variavel atribui expr_logica ponto_virgula {-> New atribuicoes.atribuicao(variavel, expr_logica)}
+  |{funcao} variavel atribui funcao_chamada {-> New atribuicoes.funcao(variavel, funcao_chamada)};
+  //|{atrib_vetor} variavel colchete_esquerdo inteiro colchete_direito atribui expr_logica ponto_virgula {-> New atribuicoes.atrib_vetor(variavel, inteiro, expr_logica)};
+  
+  
+ parenteses      {-> expr_logica}  =
+  {parenteses} esquerdo_parenteses expr_logica direito_parenteses     {-> expr_logica}
+  | {valor} valor                                              {-> New expr_logica.valor(valor)}
+  | {variavel} variavel                                       {-> New expr_logica.variavel(variavel)};
+  
+ parenteses2     {-> expr_logica}  =
+  {parenteses} parenteses                                 {-> parenteses.expr_logica};
+  
+ //Sessao abstrata
+Abstract Syntax Tree
+
+ start = instancia_programa;
+ instancia_programa = [bloco_declaracao]:declaracao* [bloco_funcoes]:bloco_funcoes /* [identificador]:identificador [bloco_programa]:bloco_programa*/;
+ 
+ bloco_comando = 
+   comando*;
+ 
+ bloco_programa = [bloco_declaracao]:declaracao* [bloco_comando]:comando*;
+ 
+ declaracao = 
+  {variavel} [tipo]:tipo [bloco_variaveis]:bloco_variaveis
+  |{vetor} [tipo]:tipo [expr_logica]:expr_logica;
+  
+ variavel = 
+  {variavel}  [identificador]:identificador
+  | {vetor} [identificador]:identificador [expr_logica]:expr_logica;
+  
+ bloco_variaveis = 
+  {variavel} [variavel]:variavel
+  |{variaveis} [bloco_variaveis]:bloco_variaveis [variavel]:variavel;
+  
+  
+ variaveis_funcao = 
+   {variavel} [variavel_funcao]:variavel_funcao 
+   | {variaveis} [variaveis_funcao]:variaveis_funcao [variavel_funcao]:variavel_funcao;
+   
+ variavel_funcao = 
+   {variavel} [tipo]:tipo [identificador]:identificador
+   | {variaveis} [tipo]:tipo [identificador]:identificador [expr_logica]:expr_logica;   
+
+  
+ tipo =
+  {real}                n_real
+  | {inteiro}             n_inteiro
+  | {caractere}           n_caract
+  | {booleano} n_booleano;
+  
+ tipo_funcao = 
+  {vazio} [vazio]:vazio
+  |{tipo} [tipo]:tipo; 
+  
+ atribuicoes =
+  {atribuicao} [variavel]:variavel [expr_logica]:expr_logica
+  |{funcao} [variavel]:variavel [funcao_chamada]:funcao_chamada;
+ 
+  
+ funcao = 
+  {declaracao} [tipo_funcao]:tipo_funcao [identificador]:identificador [variaveis_funcao]:variaveis_funcao? [bloco_programa]:bloco_programa;
+ 
+ retorno = [expr]:expr;
+ 
+ funcao_chamada = [identificador]:identificador [bloco_expr]:bloco_expr?;
+ 
+ bloco_funcoes =
+  {funcao} [funcao]:funcao
+  |{varias} [bloco_funcoes]:bloco_funcoes [funcao]:funcao;
+ 
+ 
+ se_estrutura = [se_stant]:se_stant;
+ senao_estrutura = [se_stant]:se_stant [senao_stant]:senao_stant;
+ enquanto_estrutura = [enquanto_stant]:enquanto_stant;
+ para_estrutura = [para_stant]:para_stant;
+ paracada_estrutura = [paracada_stant]:paracada_stant; 
+
+
+ se_stant = [expr_logica]:expr_logica [bloco_comando]:comando*;
+ senao_stant = [bloco_comando]:comando*;
+ enquanto_stant = [expr_logica]:expr_logica [bloco_comando]:comando*;
+ para_stant = [atribuicoes]:atribuicoes [para_stant2]:para_stant2;
+ para_stant2 =  [para_stant3]:para_stant3;
+ para_stant3 = [bloco_comando]:comando*;
+  
+ paracada_stant = [tipo]:tipo [identificador]:identificador [paracada_stant2]:paracada_stant2;
+ paracada_stant2 = [bloco_comando]:comando*;
+ 
+ 
+ comando = 
+  {funcao}	funcao_chamada
+  | {retorne} retorno
+  |{atribuicao}	atribuicoes
+  |{se}	se_estrutura
+  |{se_senao} senao_estrutura
+  | {enquanto}      enquanto_estrutura
+  | {para}          para_estrutura
+  | {para_cada}    paracada_estrutura;
+ 
+ bloco_expr =
+   {simples}  [expr]:expr
+   | {bloco_expr}  [bloco_expr]:bloco_expr [expr]:expr;
+ 
+ 
+ expr = 
+  {mais} [l]:expr [r]:expr
+  |{menos} [l]:expr [r]:expr
+  |{vezes} [l]:expr [r]:expr
+  |{dividido} [l]:expr [r]:expr
+  |{resto} [l]:expr [r]:expr
+  |{valor} valor
+  |{variavel} variavel
+  |{menos_expressao} menos expr;
+ 
+  
+
+ expr_logica =
+{ou}            [l]: expr_logica [r]: expr_logica
+| {e}            [l]: expr_logica [r]: expr_logica
+| {maiorigual}    [l]: expr_logica [r]: expr_logica
+| {menorigual}    [l]: expr_logica [r]: expr_logica
+| {maior}        [l]: expr_logica [r]: expr_logica
+| {menor}        [l]: expr_logica [r]: expr_logica
+| {mais}         [l]: expr_logica [r]: expr_logica
+| {menos}          [l]: expr_logica [r]: expr_logica
+| {vezes}          [l]: expr_logica [r]: expr_logica
+| {dividido}      [l]: expr_logica [r]: expr_logica
+| {resto}          [l]: expr_logica [r]: expr_logica
+| {nao}            [l]: expr_logica
+| {valor}        valor
+| {variavel}    variavel;
+
+ 
+ valor =
+  {valor_real}          real
+  | {valor_inteiro}       inteiro
+  | {valor_caractere}     caractere
+  | {valor_booleano} booleano;

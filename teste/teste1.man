@@ -1,0 +1,13 @@
+#Mais um
+caractere asci;
+vazio teste() início
+  	# ola comentario
+	caractere teste;
+	teste:='a';
+	enquanto (verdadeiro) início
+	fim
+fim
+
+vazio principal() início
+  teste();
+fim

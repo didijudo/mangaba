@@ -1,0 +1,11 @@
+programa teste início 
+ vetor inteiro varr[3];
+ varr[2] := 2;
+ para cada (inteiro teste: varr) início
+	
+	se (verdadeiro) início
+	  caractere ca;
+	  ca := '0';
+	fim
+ fim;
+fim

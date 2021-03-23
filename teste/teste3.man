@@ -1,0 +1,8 @@
+inteiro teste() início
+ inteiro a;
+ a:=2;
+fim
+
+vazio teste() início
+	
+fim
